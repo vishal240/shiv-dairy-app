@@ -119,13 +119,14 @@ const ProductDetails = ({ data }: Props) => {
             <b className="font-16  mb-0">₹{item?.price?.final_price}</b>
           </div>
           <div className="rating2 pt-3 px-2">
-            {getQuantity(item._id) === 0 ? (
+           {getQuantity(item._id) === 0 && (
               <label className="qty_m">
                 <button className="addtocart" onClick={() => addToCart(item)}>
                   Add to cart
                 </button>
               </label>
-            ) : (
+            )}
+            {getQuantity(item._id) > 0 && (
               <label className="qty_m">
                 <button
                   className="minus"
@@ -133,11 +134,12 @@ const ProductDetails = ({ data }: Props) => {
                 >
                   <Minus size={16}></Minus>
                 </button>
-                <input type="text" disabled value={getQuantity(item._id)}></input>
-                <button
-                  className="plus"
-                  onClick={() => increaseQuantity(item)}
-                >
+                <input
+                  type="text"
+                  disabled
+                  value={getQuantity(item._id)}
+                ></input>
+                <button className="plus" onClick={() => increaseQuantity(item)}>
                   <Plus size={16}></Plus>
                 </button>
               </label>
