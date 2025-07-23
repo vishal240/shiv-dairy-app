@@ -9,6 +9,30 @@ const ProductDetails = ({ data }: Props) => {
   const [productList, setProductList] = useState<any>([]);
   const [cartItems, setCartItems] = useState<{ [key: string]: number }>({});
 
+  // Calculate discount and final price
+  const calculatePrice = (item: any) => {
+    const originalPrice = item?.price?.price || 0;
+    const discountPercentage = item?.price?.discount_percentage || 0;
+    const discountType = item?.price?.discount_type;
+    
+    let discountAmount = 0;
+    let finalPrice = originalPrice;
+    
+    if (discountType === "percentage" && discountPercentage > 0) {
+      discountAmount = (originalPrice * discountPercentage) / 100;
+      finalPrice = originalPrice - discountAmount;
+    } else if (discountType === "fixed" && discountPercentage > 0) {
+      discountAmount = discountPercentage;
+      finalPrice = originalPrice - discountAmount;
+    }
+    
+    return {
+      originalPrice,
+      discountAmount,
+      finalPrice: Math.max(finalPrice, 0), // Ensure price doesn't go negative
+      hasDiscount: discountAmount > 0
+    };
+  };
   const getProductList = () => {
     ApiService.post("/user/getProductList", {
       filters: {
@@ -100,32 +124,56 @@ const ProductDetails = ({ data }: Props) => {
           </div>
           <div className="flex-2 pt-0 px-3">
             <p className="font-16 mb-1">{item?.product_name}</p>
-            {/* <p className="color-red font-12 mb-1">1 Ltr Pack</p> */}
+            
             {item?.price?.batch && (
               <p className="color-grey font-12 mb-1">
                 Batch: {item?.price?.batch}{" "}
               </p>
             )}
+            
             {item?.price?.batch_quantity && (
               <p className="color-grey font-12 mb-1">
                 Min Order: {item?.price?.batch_quantity}{" "}
               </p>
             )}
+            
             {item?.price?.quantity && (
               <p className="color-grey font-12 mb-1">
                 Quantity: {item?.price?.quantity}{" "}
               </p>
             )}
-            <b className="font-16  mb-0">₹{item?.price?.final_price}</b>
+            
+            {(() => {
+              const priceInfo = calculatePrice(item);
+              return (
+                <div className="d-flex align-items-center gap-2">
+                  <b className="font-16 mb-0">₹{priceInfo.finalPrice.toFixed(2)}</b>
+                  {priceInfo.hasDiscount && (
+                    <>
+                      <span className="font-12 text-decoration-line-through color-grey">
+                        ₹{priceInfo.originalPrice.toFixed(2)}
+                      </span>
+                      <span className="font-12 color-red bg-light px-2 py-1 rounded">
+                        {item?.price?.discount_type === "percentage" 
+                          ? `${item?.price?.discount_percentage}% OFF`
+                          : `₹${item?.price?.discount_percentage} OFF`
+                        }
+                      </span>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div className="rating2 pt-3 px-2">
-           {getQuantity(item._id) === 0 && (
+            {getQuantity(item._id) === 0 && (
               <label className="qty_m">
                 <button className="addtocart" onClick={() => addToCart(item)}>
                   Add to cart
                 </button>
               </label>
             )}
+            
             {getQuantity(item._id) > 0 && (
               <label className="qty_m">
                 <button
