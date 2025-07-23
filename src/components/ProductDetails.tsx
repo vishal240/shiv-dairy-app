@@ -7,7 +7,8 @@ interface Props {
 }
 const ProductDetails = ({ data }: Props) => {
   const [productList, setProductList] = useState<any>([]);
-  const [quantity, setQuantity] = useState(0);
+  const [cartItems, setCartItems] = useState<{ [key: string]: number }>({});
+
   const getProductList = () => {
     ApiService.post("/user/getProductList", {
       filters: {
@@ -32,13 +33,33 @@ const ProductDetails = ({ data }: Props) => {
         console.log(err);
       });
   };
+
+  const getQuantity = (productId: string) => {
+    return cartItems[productId] || 0;
+  };
+
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      const updatedItems = { ...cartItems };
+      delete updatedItems[productId];
+      setCartItems(updatedItems);
+    } else {
+      setCartItems(prev => ({
+        ...prev,
+        [productId]: newQuantity
+      }));
+    }
+  };
+
   const addToCart = (item: any) => {
     console.log(item);
-    setQuantity((prev: number) => prev + 1);
+    const currentQuantity = getQuantity(item._id);
+    updateQuantity(item._id, currentQuantity + 1);
+    
     // ApiService.post("/user/addToCart", {
     //   store_id: item?.store_id?._id,
     //   product_id: item?._id,
-    //   quantity: quantity,
+    //   quantity: currentQuantity + 1,
     //   discount_type: item?.price?.discount_type,
     //   discount_value: item?.price?.discount_percentage,
     // })
@@ -49,12 +70,21 @@ const ProductDetails = ({ data }: Props) => {
     //     console.log(err);
     //   });
   };
+
+  const increaseQuantity = (item: any) => {
+    const currentQuantity = getQuantity(item._id);
+    updateQuantity(item._id, currentQuantity + 1);
+  };
+
+  const decreaseQuantity = (item: any) => {
+    const currentQuantity = getQuantity(item._id);
+    updateQuantity(item._id, currentQuantity - 1);
+  };
+
   useEffect(() => {
     getProductList();
   }, [data]);
-  useEffect(() => {
-    console.log(quantity);
-  }, [quantity]);
+
   return (
     <>
       {productList?.map((item: any) => (
@@ -89,7 +119,7 @@ const ProductDetails = ({ data }: Props) => {
             <b className="font-16  mb-0">₹{item?.price?.final_price}</b>
           </div>
           <div className="rating2 pt-3 px-2">
-            {quantity == 0 ? (
+            {getQuantity(item._id) === 0 ? (
               <label className="qty_m">
                 <button className="addtocart" onClick={() => addToCart(item)}>
                   Add to cart
@@ -99,14 +129,14 @@ const ProductDetails = ({ data }: Props) => {
               <label className="qty_m">
                 <button
                   className="minus"
-                  onClick={() => setQuantity((prev: number) => prev - 1)}
+                  onClick={() => decreaseQuantity(item)}
                 >
                   <Minus size={16}></Minus>
                 </button>
-                <input type="text" disabled value={quantity}></input>
+                <input type="text" disabled value={getQuantity(item._id)}></input>
                 <button
                   className="plus"
-                  onClick={() => setQuantity((prev: number) => prev + 1)}
+                  onClick={() => increaseQuantity(item)}
                 >
                   <Plus size={16}></Plus>
                 </button>
